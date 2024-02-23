@@ -1,0 +1,15 @@
+{
+  "name": "@giving-tree/cli",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "lint": "eslint './src/**/*.{ts,tsx}'",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.3",
+    "@giving-tree/prompts": "workspace:*",
+    "llamaindex": "^0.1.10"
+  }
+}

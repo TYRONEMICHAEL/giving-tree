@@ -1,0 +1,11 @@
+{
+  "name": "@giving-tree/core",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "lint": "eslint './src/**/*.{ts,tsx}'",
+    "build": "tsc && (cd src && find . -name '*.md' | cpio -pdm ../dist)"
+  },
+  "dependencies": { "llamaindex": "^0.1.12" }
+}

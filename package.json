@@ -1,0 +1,24 @@
+{
+  "name": "giving-tree",
+  "module": "index.ts",
+  "type": "module",
+  "workspaces": ["packages/*"],
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^6.20.0",
+    "bun-types": "latest",
+    "eslint": "^8.56.0",
+    "eslint-config-standard-with-typescript": "^43.0.1",
+    "eslint-plugin-import": "^2.29.1",
+    "eslint-plugin-n": "^16.6.2",
+    "eslint-plugin-promise": "^6.1.1",
+    "typescript": "^5.3.3"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@types/node": "^20.11.14",
+    "dotenv": "^16.4.1",
+    "llamaindex": "0.1.3"
+  }
+}
