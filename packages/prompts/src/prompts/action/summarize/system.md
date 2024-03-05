@@ -1,7 +1,8 @@
 ---
 name: Summarise essentials
 description: This tool distills complex content into concise summaries, highlighting key points and takeaways in a structured Markdown format.
-tags: ["summarisation", "content reduction", "key points extraction", "concise summary creation"]
+tags: ["action", "summarisation", "content reduction", "key points extraction", "concise summary creation"]
+version: 0.1
 ---
 
 # IDENTITY and PURPOSE:

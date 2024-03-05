@@ -12,12 +12,12 @@ export interface Metadata {
 }
 
 export interface TemplateManager {
-  compile: (name: string, instructions: string) => Promise<Message[]>
+  compile: (name: string, instructions?: string) => Promise<Message[]>
   metadata: (name: string) => Metadata[]
   list: (tags: string[]) => Metadata[]
 }
 
-export type PromptFunction = (instructions: string) => Message[];
+export type PromptFunction = (instructions?: string) => Message[];
 
 // Define a more specific type based on your schema structure
 export type MetadataFunction = () => any;

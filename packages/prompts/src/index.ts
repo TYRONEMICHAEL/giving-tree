@@ -11,44 +11,58 @@ import {
   type TemplateManager
 } from './types';
 
-const reader = (filePath: string): string => fs.readFileSync(filePath, 'utf8');
-
 const loadPrompts = (): Prompts => {
-  const promptsPath = path.join(__dirname, 'Prompts');
-  const promptDirs = fs.readdirSync(promptsPath).filter(entry => {
+  const promptsPath = path.join(__dirname, 'prompts');
+  const categoryDirs = fs.readdirSync(promptsPath).filter(entry => {
     return fs.statSync(path.join(promptsPath, entry)).isDirectory();
   });
 
-  return promptDirs.reduce<Prompts>((acc, dir) => {
-    const systemTemplatePath = path.join(promptsPath, dir, 'system.md');
+  const prompts: Prompts = {};
 
-    if (fs.existsSync(systemTemplatePath)) {
-      const systemTemplateContent = reader(systemTemplatePath);
-      const systemTemplate = Handlebars.compile(systemTemplateContent);
+  // Iterate through each category directory (Action, Behavior, Tone)
+  categoryDirs.forEach(categoryDir => {
+    const categoryPath = path.join(promptsPath, categoryDir);
+    const promptDirs = fs.readdirSync(categoryPath).filter(entry => {
+      return fs.statSync(path.join(categoryPath, entry)).isDirectory();
+    });
 
-      const promptFunction: PromptFunction = (instructions) => {
-        const { content: systemContent } = matter(systemTemplate({})); // In the future we may want to pass in variables
-        const systemPrompt = [{ role: 'system', content: systemContent }];
-        const userPrompt = [{ role: 'user', content: instructions }];
-        return [...systemPrompt, ...userPrompt];
-      };
+    // Iterate through each prompt directory within the category
+    promptDirs.forEach(dir => {
+      const systemTemplatePath = path.join(categoryPath, dir, 'system.md');
+      const id = `${categoryDir}/${dir}`;
 
-      const metadataFunction: MetadataFunction = () => {
-        const { data } = matter(systemTemplateContent);
-        return { ...data, id: dir };
-      };
+      if (fs.existsSync(systemTemplatePath)) {
+        const systemTemplateContent = fs.readFileSync(systemTemplatePath, 'utf8');
+        const systemTemplate = Handlebars.compile(systemTemplateContent);
 
-      acc[dir] = { prompt: promptFunction, metadata: metadataFunction };
-    }
+        const promptFunction: PromptFunction = (instructions?: string) => {
+          const { content: systemContent } = matter(systemTemplate({})); // Future: pass variables
+          const systemPrompt = [{ role: 'system', content: systemContent }];
+          if (instructions == null) {
+            return systemPrompt;
+          }
+          const userPrompt = [{ role: 'user', content: instructions }];
+          return [...systemPrompt, ...userPrompt];
+        };
 
-    return acc;
-  }, {});
+        const metadataFunction: MetadataFunction = () => {
+          const { data } = matter(systemTemplateContent);
+          return { ...data, id };
+        };
+
+        // Store the prompt using a unique key combining category and directory
+        prompts[id] = { prompt: promptFunction, metadata: metadataFunction };
+      }
+    });
+  });
+
+  return prompts;
 };
 
 export const initialize = (): TemplateManager => {
   const prompts = loadPrompts();
 
-  const compile = async (name: string, instructions: string): Promise<Message[]> =>
+  const compile = async (name: string, instructions?: string): Promise<Message[]> =>
     prompts[name].prompt(instructions);
 
   const metadata = (name: string): Metadata[] => {
