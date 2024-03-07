@@ -12,7 +12,7 @@ import {
 } from './types';
 
 const loadPrompts = (): Prompts => {
-  const promptsPath = path.join(__dirname, 'prompts');
+  const promptsPath = __dirname;
   const categoryDirs = fs.readdirSync(promptsPath).filter(entry => {
     return fs.statSync(path.join(promptsPath, entry)).isDirectory();
   });
