@@ -1,30 +1,48 @@
-export interface Message {
-  role: string
-  content: string
+import Joi from "joi";
+
+export interface Prompt {
+  id: string;
+  packId: string;
+  version: string;
+  name: string;
+  tags: string[];
+  content: string;
 }
 
-export interface Metadata {
-  id: string
-  name: string
-  description: string
-  tags: string[]
-  schema: any
+export const promptSchema = Joi.object({
+  name: Joi.string().required(),
+  packId: Joi.string().required(),
+  tags: Joi.array().items(Joi.string()).required(),
+  version: Joi.string().required(),
+  content: Joi.string().required(),
+});
+
+export interface PromptPack {
+  id: string;
+  version: string;
+  name: string;
+  description: string;
+  prompts: string[];
 }
 
-export interface TemplateManager {
-  compile: (name: string, instructions?: string) => Promise<Message[]>
-  metadata: (name: string) => Metadata[]
-  list: (tags: string[]) => Metadata[]
+export const promptPackSchema = Joi.object({
+  id: Joi.string().required(),
+  version: Joi.string().required(),
+  name: Joi.string().required(),
+  description: Joi.string().required(),
+  prompts: Joi.array().items(Joi.string()).required(),
+});
+
+export interface PromptService {
+  addPrompt(markdown: string): Promise<Prompt>;
+  updatePrompt(markdown: string): Promise<Prompt>;
+  deletePrompt(markdown: string): Promise<void>;
+  searchPrompts(query: string): Promise<Prompt[]>;
 }
 
-export type PromptFunction = (instructions?: string) => Message[];
-
-// Define a more specific type based on your schema structure
-export type MetadataFunction = () => any;
-
-export interface PromptObject {
-  prompt: PromptFunction
-  metadata: MetadataFunction
+export interface PromptPackService {
+  installPack(id: string): Promise<void>;
+  updatePack(id: string): Promise<void>;
+  deletePack(id: string): Promise<void>;
+  searchPacks(query: string): Promise<string>;
 }
-
-export type Prompts = Record<string, PromptObject>;
