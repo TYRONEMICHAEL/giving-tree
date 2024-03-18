@@ -1,23 +1,43 @@
 import * as dotenv from 'dotenv';
-import { initialize as Prompt } from '@giving-tree/prompts';
-import { initialize as Store } from '@giving-tree/store';
-import fs from 'node:fs/promises';
-import { type ChatMessage, OpenAI } from 'llamaindex';
+import { PromptAgent } from '@giving-tree/agent';
+import { type DocumentId, type DocumentData, Store } from '@giving-tree/core';
 
 dotenv.config();
 
-void (async () => {
-  // const llm = new OpenAI({ apiKey: process.env.OPENAI_API_KEY, model: process.env.OPENAI_MODEL });
-  // const { compile, list } = Prompt();
-  const path = '/entry.md';
+class MockStore implements Store {
+  async create (documentData: DocumentData): Promise<DocumentId> {
+    console.log('Creating document with data:', documentData);
+    // Return a dummy DocumentId
+    return 'dummyId';
+  }
 
-  const essay = await fs.readFile(__dirname + path, 'utf-8');
-  const { add, query } = Store();
-  await add(essay);
-  console.log(await query('I remember doing a brainstorming session in the afternoon. What date was that and please provide a summary?'));
-  // console.log(list([]));
-  // const tone = await compile('tone/empathetic-phychologist') as ChatMessage[];
-  // const action = await compile('action/insight-compression-analysis', 'Can I use these feelings of anxiety as fuel. Someone said something to me yesterday. Founders have this built in confidence. A confidence where no matter what they feel they know they will make it. Like nothing can stop them. i.e no self doubt. I need to exude this confidence, but I am hampered by self-doubt.') as ChatMessage[];
-  // const result = await llm.chat({ messages: [...tone, ...action] });
-  // console.log(result);
+  async query (query: string): Promise<DocumentData[]> {
+    console.log('Querying documents with query:', query);
+    // Return an empty array or a mock DocumentData array as needed
+    return [];
+  }
+
+  async get (id: DocumentId): Promise<DocumentData> {
+    console.log('Getting document with ID:', id);
+    // Return a mock DocumentData object
+    return { id, mockData: 'This is mock data' };
+  }
+
+  async update (id: DocumentId, documentData: DocumentData): Promise<DocumentId> {
+    console.log('Updating document with ID:', id, 'with data:', documentData);
+    // Return the same ID to indicate success
+    return id;
+  }
+
+  async delete (id: DocumentId): Promise<DocumentId> {
+    console.log('Deleting document with ID:', id);
+    // Return the same ID to indicate success
+    return id;
+  }
+}
+
+void (async () => {
+  const agent = new PromptAgent(new MockStore());
+  const result = await agent.processQuery(`Please add the following prompt: --- version: "1.0" name: "Futuristic AI Interface Analysis" tags: ["AI", "interface", "technology", "innovation"] description: "An in-depth analysis of the latest advancements in AI user interfaces, with a focus on holographic and interactive data visualization technologies." --- # Prompt You are my best friend. Act like it.`);
+  console.log(result);
 })();

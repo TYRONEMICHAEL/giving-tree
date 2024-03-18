@@ -9,8 +9,8 @@
   },
   "dependencies": {
     "dotenv": "^16.4.3",
-    "@giving-tree/prompts": "workspace:*",
-    "@giving-tree/store": "workspace:*",
+    "@giving-tree/agent": "workspace:*",
+    "@giving-tree/core": "workspace:*",
     "llamaindex": "^0.1.10"
   }
 }
