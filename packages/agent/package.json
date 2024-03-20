@@ -1,0 +1,19 @@
+{
+  "name": "@giving-tree/agent",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "lint": "eslint './src/**/*.{ts,tsx}'",
+    "build": "tsc && (cd src && rsync -R $(find . -name 'metadata.json') ../dist/)"
+  },
+  "dependencies": { 
+    "@giving-tree/core": "workspace:*",
+    "gray-matter": "^4.0.3",
+    "llamaindex": "^0.2.0",
+    "rsync": "^0.6.1"
+  },
+  "devDependencies": {
+    "shx": "^0.3.4"
+  }
+}

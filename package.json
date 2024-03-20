@@ -19,6 +19,7 @@
   "dependencies": {
     "@types/node": "^20.11.14",
     "dotenv": "^16.4.1",
+    "joi": "^17.12.2",
     "llamaindex": "0.1.3"
   }
 }

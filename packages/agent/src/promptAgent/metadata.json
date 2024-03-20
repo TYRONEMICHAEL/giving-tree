@@ -1,0 +1,68 @@
+{
+  "id": "prompt-agent",
+  "name": "Prompt Agent",
+  "description": "Manages custom prompts to dynamically shape GPT sessions. Allows users to add, update, select, query, and delete prompts, ensuring each prompt includes essential metadata for effective categorization and retrieval.",
+  "version": "1.0",
+  "capabilities": [
+    {
+      "name": "addPrompt",
+      "description": "Takes in a markdown string with YAML front matter. The front matter must include keys for 'version', 'name', 'tags', and 'description'. The 'tags' key should be associated with an array of string values, representing different tags related to the prompt. Each tag in the array should be either listed on a new line with a hyphen or within square brackets separated by commas and spaces.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "markdown": {
+            "type": "string",
+            "description": "A markdown string that includes YAML front matter at the beginning. The front matter should define 'version' (number or string), 'name' (string), 'tags' (array of strings), and 'description' (string). For the 'tags', ensure proper YAML array syntax either with hyphens for each item on a new line or as a single-line array within square brackets."
+          }
+        },
+        "required": ["markdown"]
+      }
+    },
+    {
+      "name": "updatePrompt",
+      "description": "Updates an existing prompt. Ensure the updated markdown includes 'version', 'name', 'tags', and 'description' in its YAML front matter.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The unique identifier of the prompt to update."
+          },
+          "markdown": {
+            "type": "string",
+            "description": "The updated markdown with YAML front matter that includes 'version', 'name', 'tags', and 'description'."
+          }
+        },
+        "required": ["id", "markdown"]
+      }
+    },
+    {
+      "name": "queryPrompt",
+      "description": "Queries a vectordatabase for prompts based on the users query. ",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "The query string to search for relevant prompts."
+          }
+        },
+        "required": ["query"]
+      }
+    },
+    {
+      "name": "deletePrompt",
+      "description": "Deletes a prompt from the system by its unique identifier.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The unique identifier of the prompt to delete."
+          }
+        },
+        "required": ["id"]
+      }
+    }
+  ]
+}

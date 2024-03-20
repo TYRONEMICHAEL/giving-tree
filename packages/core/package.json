@@ -1,5 +1,5 @@
 {
-  "name": "@giving-tree/store",
+  "name": "@giving-tree/core",
   "version": "1.0.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -7,5 +7,5 @@
     "lint": "eslint './src/**/*.{ts,tsx}'",
     "build": "tsc"
   },
-  "dependencies": { "llamaindex": "^0.1.21", "@giving-tree/core": "workspace:*" }
+  "dependencies": { "handlebars": "^4.7.8" }
 }

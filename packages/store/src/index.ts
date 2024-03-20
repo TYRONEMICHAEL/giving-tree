@@ -1,7 +1,6 @@
 import { initialize as llamaIndex } from './llamaIndex';
-import { type Store } from './types';
+import { type Store } from '@giving-tree/core';
 
-export const initialize = (): Store => {
-  const { add, query } = llamaIndex();
-  return { add, query };
+export const initialize = async (): Promise<Store> => {
+  return await llamaIndex();
 };
