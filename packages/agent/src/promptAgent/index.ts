@@ -5,14 +5,14 @@ import {
   type AgentMetadata,
   type CapabilitySchema,
   type Store,
-  type StoreAwareAgent
+  type StoreAwareAgent,
+  type Metadata
 } from '@giving-tree/core';
 
 import { FunctionTool, OpenAI, OpenAIAgent } from 'llamaindex';
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
-import grayMatter from 'gray-matter';
 import Joi from 'joi';
 
 // ─────────────────────────────────────────────────────────────
@@ -21,7 +21,7 @@ import Joi from 'joi';
 
 export type PromptId = string;
 
-export interface promptMetadata {
+export interface PromptMetadata {
   version: string
   name: string
   tags: string[]
@@ -30,7 +30,7 @@ export interface promptMetadata {
 
 export const promptMetadataSchema = Joi.object({
   name: Joi.string().required(),
-  tags: Joi.array().items(Joi.string()).required(),
+  tags: Joi.array().required(),
   version: Joi.string().required(),
   description: Joi.string().required()
 });
@@ -93,34 +93,25 @@ export const capabilities = (store: Store, metadata: AgentMetadata): Capabilitie
 
   // ─── ADD CAPABILITY ────────────────────────────────────
 
-  const addPromptCapability = async (obj: { markdown: string }): Promise<string> => {
-    const { data, content } = grayMatter(obj.markdown);
-    const id = generateHashId(obj.markdown);
-    const metadata = { id, ...data };
-    validatePromptSchema(data);
-    await store.insert({ text: content, metadata });
+  const addPromptCapability = async (obj: { markdown: string, metadata: PromptMetadata }): Promise<string> => {
+    const { markdown, metadata } = obj;
+    const id = generateHashId(markdown);
+    validatePromptSchema(metadata);
+    await store.insert({ text: markdown, metadata: { ...metadata, id } });
     return id;
   };
 
   // ─── UPDATE Capability ────────────────────────────────────
 
   const updatePromptCapability = async (id: string, markdown: string): Promise<string> => {
-    const { data: metadata, content } = grayMatter(markdown);
-
-    if (id.length === 0) {
-      throw new PromptValidationError('Prompt metadata must include an id');
-    }
-
-    validatePromptSchema(metadata);
-    await store.update({ text: content, metadata });
-    return id;
+    throw new Error('Not implemented');
   };
 
   // ─── QUERY Capability ────────────────────────────────────
 
-  const queryPromptCapability = async ({ query }: { query: string }): Promise<string> => {
-    const result = await store.query(query);
-    return 'The following prompts were found: ' + result;
+  const queryPromptCapability = async ({ query, metadata }: { query: string, metadata: Metadata }): Promise<string> => {
+    const result = await store.query(query, metadata);
+    return result;
   };
 
   // ─── DELETE Capability ────────────────────────────────────

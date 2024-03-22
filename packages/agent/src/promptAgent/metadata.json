@@ -6,18 +6,45 @@
   "capabilities": [
     {
       "name": "addPrompt",
-      "description": "Takes in a markdown string with YAML front matter. The front matter must include keys for 'version', 'name', 'tags', and 'description'. The 'tags' key should be associated with an array of string values, representing different tags related to the prompt. Each tag in the array should be either listed on a new line with a hyphen or within square brackets separated by commas and spaces.",
+      "description": "Takes in a markdown string and separate metadata. The markdown should not include YAML front matter. Instead, metadata should be provided as a separate parameter, which includes keys for 'version', 'name', 'tags', and 'description'.",
       "parameters": {
         "type": "object",
         "properties": {
           "markdown": {
             "type": "string",
-            "description": "A markdown string that includes YAML front matter at the beginning. The front matter should define 'version' (number or string), 'name' (string), 'tags' (array of strings), and 'description' (string). For the 'tags', ensure proper YAML array syntax either with hyphens for each item on a new line or as a single-line array within square brackets."
+            "description": "A markdown string without YAML front matter. This should contain the main content for the prompt."
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Metadata for the markdown content. Should include keys for 'version', 'name', 'tags', and 'description'. Example: { 'version': '1.0', 'name': 'Content Summarization Expert', 'tags': [{'tag': 'summarization'}, {'tag': 'content analysis'}], 'description': 'As a content summarization expert, you are tasked with condensing content into a concise summary.' }",
+            "properties": {
+              "version": {
+                "type": "string",
+                "pattern": "^\\d+\\.\\d+\\.\\d+$",
+                "description": "The version of the prompt, represented as a string in 'major.minor.patch' format. For example, '1.0.0'."
+              },
+              "name": {
+                "type": "string",
+                "description": "Name of the prompt."
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "An array of string values, each representing a tag related to the prompt. Example: ['summarization', 'content analysis', 'markdown formatting']"
+              },
+              "description": {
+                "type": "string",
+                "description": "A brief description of the prompt."
+              }
+            },
+            "required": ["version", "name", "tags", "description"]
           }
         },
-        "required": ["markdown"]
+        "required": ["markdown", "metadata"]
       }
-    },
+    },    
     {
       "name": "updatePrompt",
       "description": "Updates an existing prompt. Ensure the updated markdown includes 'version', 'name', 'tags', and 'description' in its YAML front matter.",
@@ -38,18 +65,25 @@
     },
     {
       "name": "queryPrompt",
-      "description": "Queries a vectordatabase for prompts based on the users query. ",
+      "description": "Queries the vector database for prompts based on the user's query and metadata filters for exact matching.",
       "parameters": {
         "type": "object",
         "properties": {
           "query": {
             "type": "string",
             "description": "The query string to search for relevant prompts."
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Metadata for filtering results with an exact match.",
+            "additionalProperties": {
+              "type": "string"
+            }
           }
         },
-        "required": ["query"]
+        "required": ["query", "metadata"]
       }
-    },
+    },    
     {
       "name": "deletePrompt",
       "description": "Deletes a prompt from the system by its unique identifier.",

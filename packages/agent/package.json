@@ -9,7 +9,6 @@
   },
   "dependencies": { 
     "@giving-tree/core": "workspace:*",
-    "gray-matter": "^4.0.3",
     "llamaindex": "^0.2.0",
     "rsync": "^0.6.1"
   },

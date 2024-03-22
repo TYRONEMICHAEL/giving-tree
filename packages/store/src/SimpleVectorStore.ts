@@ -1,5 +1,5 @@
 import { type DocumentId, type DocumentData, type Store } from '@giving-tree/core';
-import { Document, MetadataMode, VectorStoreIndex, storageContextFromDefaults } from 'llamaindex';
+import { Document, VectorStoreIndex, storageContextFromDefaults } from 'llamaindex';
 
 export const initialize = async (): Promise<Store> => {
   const storageContext = await storageContextFromDefaults({
@@ -7,7 +7,6 @@ export const initialize = async (): Promise<Store> => {
   });
 
   const insert = async (documentData: DocumentData): Promise<void> => {
-    console.log('inserting', documentData);
     const { metadata, text } = documentData;
     const document = new Document({ text, metadata });
     await VectorStoreIndex.fromDocuments([document], {
@@ -16,7 +15,6 @@ export const initialize = async (): Promise<Store> => {
   };
 
   const query = async (query: string): Promise<string> => {
-    console.log('querying', query);
     const docs = await storageContext.docStore.docs();
 
     if (Object.keys(docs).length === 0) {
@@ -27,10 +25,16 @@ export const initialize = async (): Promise<Store> => {
       storageContext
     });
 
+    const retriever = index.asRetriever();
+    // console.log(await retriever.retrieve(query));
+
     const loadedQueryEngine = index.asQueryEngine();
+    console.log(loadedQueryEngine.getPrompts()['responseSynthesizer:textQATemplate']({ query }));
+    console.log(loadedQueryEngine.getPrompts()['responseSynthesizer:refineTemplate"']({ query }));
     const loadedResponse = await loadedQueryEngine.query({
       query
     });
+
     return loadedResponse.toString();
   };
 
