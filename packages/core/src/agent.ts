@@ -30,7 +30,8 @@ export interface AgentMetadata {
   capabilities: CapabilitySchema[]
 }
 
-export interface Agent {
+export interface Agent<T> {
+  readonly store: Store<T>
   readonly metadata: AgentMetadata
 
   /**
@@ -42,10 +43,6 @@ export interface Agent {
   processQuery: (query: string) => Promise<string>
 }
 
-export interface StoreAwareAgent extends Agent {
-  readonly store: Store
-}
-
 export interface AgentError extends Error {
   id: AgentId
   capability: CapabilitySchema
@@ -55,17 +52,10 @@ export interface AgentError extends Error {
 // COMMON IMPLEMENTATION
 // ─────────────────────────────────────────────────────────────
 
-export const createAgent = (metadata: AgentMetadata, processQueryFn: (query: string) => Promise<string>): Agent => {
-  return {
-    metadata,
-    processQuery: processQueryFn
-  };
-};
-
-export const createStoreAwareAgent = (
+export const createAgent = <M>(
   metadata: AgentMetadata,
-  store: Store,
-  processQueryFn: (query: string) => Promise<string>): StoreAwareAgent => {
+  store: Store<M>,
+  processQueryFn: (query: string) => Promise<string>): Agent<M> => {
   return {
     metadata,
     store,

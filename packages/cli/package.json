@@ -11,8 +11,7 @@
     "@giving-tree/agent": "workspace:*",
     "@giving-tree/core": "workspace:*",
     "@giving-tree/store": "workspace:*",
-    "@traceloop/node-server-sdk": "^0.5.25",
-    "dotenv": "^16.4.3",
-    "llamaindex": "^0.1.10"
+    "@qdrant/js-client-rest": "^1.8.1",
+    "dotenv": "^16.4.3"
   }
 }

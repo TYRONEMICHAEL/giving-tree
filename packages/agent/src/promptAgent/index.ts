@@ -1,25 +1,21 @@
-/* eslint-disable @typescript-eslint/prefer-reduce-type-parameter */
-/* eslint-disable @typescript-eslint/consistent-type-assertions */
 import {
-  createStoreAwareAgent,
+  createAgent,
   type AgentMetadata,
   type CapabilitySchema,
   type Store,
-  type StoreAwareAgent,
-  type Metadata
+  type Agent,
+  type Filter,
+  type SimpleFilter
 } from '@giving-tree/core';
 
 import { FunctionTool, OpenAI, OpenAIAgent } from 'llamaindex';
 import fs from 'fs';
 import path from 'path';
-import crypto from 'crypto';
 import Joi from 'joi';
 
 // ─────────────────────────────────────────────────────────────
 // TYPES AND SCHEMAS
 // ─────────────────────────────────────────────────────────────
-
-export type PromptId = string;
 
 export interface PromptMetadata {
   version: string
@@ -40,21 +36,29 @@ interface Operation<F extends (...args: any[]) => Promise<any>> {
   metadata: CapabilitySchema
 }
 
-type Capability = 'addPrompt' | 'updatePrompt' | 'queryPrompt' | 'deletePrompt' | 'usePrompt';
+type Capability = 'addPrompt' | 'searchPrompts' | 'searchPromptsByMetadata';
 
-interface Capabilities {
-  addPrompt: Operation<({ markdown }: { markdown: string }) => Promise<string>>
-  // usePrompt: Operation<({ prompt, content }: { prompt: string, content: string }) => Promise<string>>
-  updatePrompt: Operation<(id: string, prompt: string) => Promise<string>>
-  queryPrompt: Operation<({ query }: { query: string }) => Promise<string>>
-  deletePrompt: Operation<(id: string) => Promise<string>>
+interface Search {
+  query: string
+  limit?: number
 }
 
-export type PromptAgent = StoreAwareAgent & Capabilities;
+interface SearchMetadata {
+  metadata: Partial<PromptMetadata>
+  limit?: number
+}
+
+interface Capabilities {
+  addPrompt: Operation<({ markdown }: { markdown: string }) => Promise<number>>
+  searchPrompts: Operation<(search: Search) => Promise<string>>
+  searchPromptsByMetadata: Operation<(search: SearchMetadata) => Promise<string>>
+}
+
+export type PromptAgent = Agent<PromptMetadata> & Capabilities;
 
 export interface PromptAgentConfig {
-  apiKey: string
-  model: string
+  openAiApiKey: string
+  openAiModel: string
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -72,16 +76,14 @@ class PromptValidationError extends Error {
 // A LIST OF CAPABILITIES
 // ─────────────────────────────────────────────────────────────
 
-export const capabilities = (store: Store, metadata: AgentMetadata): Capabilities => {
+export const capabilities = (store: Store<PromptMetadata>, metadata: AgentMetadata): Capabilities => {
   // ─── UTILITY FUNCTIONS ────────────────────────────────────
   const capabilitiesMap = metadata.capabilities
     .reduce((acc, capability) => {
       return { ...acc, [capability.name]: capability };
+    // eslint-disable-next-line max-len
+    // eslint-disable-next-line @typescript-eslint/prefer-reduce-type-parameter, @typescript-eslint/consistent-type-assertions
     }, {} as Record<Capability, CapabilitySchema>);
-
-  const generateHashId = (content: string): string => {
-    return crypto.createHash('sha256').update(content).digest('hex');
-  };
 
   const validatePromptSchema = (data: any): void => {
     const { error } = promptMetadataSchema.validate(data);
@@ -93,54 +95,65 @@ export const capabilities = (store: Store, metadata: AgentMetadata): Capabilitie
 
   // ─── ADD CAPABILITY ────────────────────────────────────
 
-  const addPromptCapability = async (obj: { markdown: string, metadata: PromptMetadata }): Promise<string> => {
+  const addPromptCapability = async (obj: { markdown: string, metadata: PromptMetadata }): Promise<number> => {
     const { markdown, metadata } = obj;
-    const id = generateHashId(markdown);
     validatePromptSchema(metadata);
-    await store.insert({ text: markdown, metadata: { ...metadata, id } });
-    return id;
-  };
-
-  // ─── UPDATE Capability ────────────────────────────────────
-
-  const updatePromptCapability = async (id: string, markdown: string): Promise<string> => {
-    throw new Error('Not implemented');
-  };
-
-  // ─── QUERY Capability ────────────────────────────────────
-
-  const queryPromptCapability = async ({ query, metadata }: { query: string, metadata: Metadata }): Promise<string> => {
-    const result = await store.query(query, metadata);
+    const result = await store.insert({ text: markdown, metadata: { ...metadata } });
     return result;
   };
 
-  // ─── DELETE Capability ────────────────────────────────────
+  // ─── SEARCH CAPABILITY ────────────────────────────────────
 
-  const deletePromptCapability = async (id: string): Promise<string> => {
-    await store.remove(id);
-    return id;
+  const searchPromptCapability = async (search: Search): Promise<string> => {
+    const { query, limit } = search;
+    const results = await store.search({ query, limit: limit ?? 10 });
+    return results.length > 0 ? results.map((result) => result.text).join('\n') : 'No results found';
+  };
+
+  // ─── SEARCH BY METADATA CAPABILITY ────────────────────────────────────
+
+  const createMetadataFilter = (metadata: Partial<PromptMetadata>): Filter<PromptMetadata> => {
+    const filterConditions: Array<SimpleFilter<PromptMetadata>> = [];
+    for (const key in metadata) {
+      if (Object.prototype.hasOwnProperty.call(metadata, key)) {
+        const value = metadata[key];
+        filterConditions.push({ type: 'Match', field: key as keyof PromptMetadata, value });
+      }
+    }
+
+    return {
+      operator: 'AND',
+      filters: filterConditions
+    };
+  };
+
+  const searchPromptsByMetadataCapability = async (search: SearchMetadata): Promise<string> => {
+    const { metadata, limit } = search;
+    const filter = createMetadataFilter(metadata);
+    console.log(filter);
+    const results = await store.searchByMetadata({ filter, limit: limit ?? 10 });
+    return results.length > 0 ? results.map((result) => result.text).join('\n') : 'No results found';
   };
 
   // ─── SCHEMA ───────────────────────────────────────────────
-  const { addPrompt, updatePrompt, queryPrompt, deletePrompt } = capabilitiesMap;
+  const { addPrompt, searchPrompts, searchPromptsByMetadata } = capabilitiesMap;
 
   return {
     addPrompt: { fn: addPromptCapability, metadata: addPrompt },
-    updatePrompt: { fn: updatePromptCapability, metadata: updatePrompt },
-    queryPrompt: { fn: queryPromptCapability, metadata: queryPrompt },
-    deletePrompt: { fn: deletePromptCapability, metadata: deletePrompt }
+    searchPrompts: { fn: searchPromptCapability, metadata: searchPrompts },
+    searchPromptsByMetadata: { fn: searchPromptsByMetadataCapability, metadata: searchPromptsByMetadata }
   };
 };
 
 // Load metadata for the PromptAgent from a JSON file
-export function createPromptAgent (store: Store, config: PromptAgentConfig): PromptAgent {
+export function createPromptAgent (store: Store<PromptMetadata>, config: PromptAgentConfig): PromptAgent {
   // Load PromptAgent metadata from JSON file
   const metadataPath = path.join(__dirname, './', 'metadata.json');
   const promptAgentMetadata: AgentMetadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
   const toolSet = capabilities(store, promptAgentMetadata);
-  const { apiKey, model } = config;
+  const { openAiApiKey: apiKey, openAiModel: model } = config;
 
-  const agent = new OpenAIAgent({
+  const openAIAgent = new OpenAIAgent({
     tools: Object.values(toolSet)
       .map((c: Operation<(...args: any[]) => Promise<any>>) => {
         return new FunctionTool(c.fn, {
@@ -155,12 +168,13 @@ export function createPromptAgent (store: Store, config: PromptAgentConfig): Pro
 
   // Define the processQuery function specific to the PromptAgent
   const processQueryFn = async (query: string): Promise<string> => {
-    return (await agent.chat({ message: query })).response;
+    return (await openAIAgent.chat({ message: query })).response;
   };
 
   // Use createStoreAwareAgent to create and return the PromptAgent
+  const agent = createAgent<PromptMetadata>(promptAgentMetadata, store, processQueryFn);
   return {
-    ...createStoreAwareAgent(promptAgentMetadata, store, processQueryFn),
+    ...agent,
     ...toolSet
   };
 }

@@ -1,2 +1,1 @@
-import { createPromptAgent, type PromptAgent } from './promptAgent';
-export { createPromptAgent, type PromptAgent };
+export { createPromptAgent, type PromptAgent, type PromptMetadata } from './promptAgent';

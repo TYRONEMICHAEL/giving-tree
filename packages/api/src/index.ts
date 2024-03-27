@@ -1,14 +1,22 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
+import * as dotenv from 'dotenv';
+import { initialize } from '@giving-tree/store';
+import { createPromptAgent, type PromptMetadata } from '@giving-tree/agent';
+
 const express = require('express');
 const app = express();
-import * as dotenv from 'dotenv';
-import { initialize as Store } from '@giving-tree/store';
+const config = {
+  openAiApiKey: process.env.OPENAI_API_KEY,
+  openAiModel: process.env.OPENAI_MODEL
+};
 
 dotenv.config();
 
-app.get('/ping', async (req, res) => {
-  const { add, query } = Store();
-  await add("Hellom world");
-  const result = await query('I remember doing a brainstorming session in the afternoon. What date was that and please provide a summary?')
+app.get('/capabilities', async (req, res) => {
+  const store = await initialize<PromptMetadata>('test', config);
+  const agent = createPromptAgent(store, config);
+  const result = agent.processQuery('Please find the first prompt about summarizing content');
+  console.log(result);
   res.send(result);
 });
 

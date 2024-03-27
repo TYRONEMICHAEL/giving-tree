@@ -44,59 +44,67 @@
         },
         "required": ["markdown", "metadata"]
       }
-    },    
-    {
-      "name": "updatePrompt",
-      "description": "Updates an existing prompt. Ensure the updated markdown includes 'version', 'name', 'tags', and 'description' in its YAML front matter.",
-      "parameters": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "The unique identifier of the prompt to update."
-          },
-          "markdown": {
-            "type": "string",
-            "description": "The updated markdown with YAML front matter that includes 'version', 'name', 'tags', and 'description'."
-          }
-        },
-        "required": ["id", "markdown"]
-      }
     },
     {
-      "name": "queryPrompt",
-      "description": "Queries the vector database for prompts based on the user's query and metadata filters for exact matching.",
+      "name": "searchPrompts",
+      "description": "Performs a search based on a simple query string. It returns a list of prompts that match the query.",
       "parameters": {
         "type": "object",
         "properties": {
           "query": {
             "type": "string",
-            "description": "The query string to search for relevant prompts."
+            "description": "The search query string used to find relevant prompts. The search implementation can vary depending on how the data is indexed and stored."
           },
-          "metadata": {
-            "type": "object",
-            "description": "Metadata for filtering results with an exact match.",
-            "additionalProperties": {
-              "type": "string"
-            }
+          "limit": {
+            "type": "number",
+            "description": "The number of results the returned by the search. This is optional and can be used to limit the number of results returned."
           }
         },
-        "required": ["query", "metadata"]
+        "required": ["query"]
       }
-    },    
+    },
     {
-      "name": "deletePrompt",
-      "description": "Deletes a prompt from the system by its unique identifier.",
+      "name": "searchPromptsByMetadata",
+      "description": "Allows users to search by specific metadata fields. At least one metadata field must be supplied, but multiple fields can be used for more refined searches. Limit is optional.",
       "parameters": {
         "type": "object",
         "properties": {
-          "id": {
-            "type": "string",
-            "description": "The unique identifier of the prompt to delete."
+          "metadata": {
+            "type": "object",
+            "properties": {
+              "version": {
+                "type": "string",
+                "description": "Search for prompts with a specific version. The version should follow the 'major.minor.patch' format."
+              },
+              "name": {
+                "type": "string",
+                "description": "Search for prompts by name."
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Search for prompts by tags. Each tag is a string. This parameter accepts an array of such tags."
+              },
+              "description": {
+                "type": "string",
+                "description": "Search for prompts by a text snippet in their descriptions."
+              }
+            },
+            "required": [],
+            "minProperties": 1,
+            "additionalProperties": false
+          },
+          "limit": {
+            "type": "number",
+            "description": "The number of results to be returned by the search. This is optional and can be used to limit the number of results returned."
           }
         },
-        "required": ["id"]
+        "required": ["metadata"],
+        "additionalProperties": false
       }
     }
+    
   ]
 }

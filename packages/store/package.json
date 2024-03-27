@@ -7,5 +7,5 @@
     "lint": "eslint './src/**/*.{ts,tsx}'",
     "build": "tsc"
   },
-  "dependencies": { "llamaindex": "^0.1.21", "@giving-tree/core": "workspace:*" }
+  "dependencies": { "@giving-tree/core": "workspace:*", "llamaindex": "^0.1.21", "openai": "^4.29.2" }
 }
