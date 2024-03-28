@@ -17,18 +17,20 @@ import Joi from 'joi';
 // TYPES AND SCHEMAS
 // ─────────────────────────────────────────────────────────────
 
-export interface PromptMetadata {
+export interface NoteMetadata {
   version: string
   name: string
   tags: string[]
   description: string
+  title: string
 }
 
-export const promptMetadataSchema = Joi.object({
+export const noteMetadataSchema = Joi.object({
   name: Joi.string().required(),
   tags: Joi.array().required(),
   version: Joi.string().required(),
-  description: Joi.string().required()
+  description: Joi.string().required(),
+  title: Joi.string().required()
 });
 
 interface Operation<F extends (...args: any[]) => Promise<any>> {
@@ -36,7 +38,12 @@ interface Operation<F extends (...args: any[]) => Promise<any>> {
   metadata: CapabilitySchema
 }
 
-type Capability = 'addPrompt' | 'searchPrompts' | 'searchPromptsByMetadata';
+type Capability = 'addNote' | 'searchNotes' | 'searchNotesByMetadata';
+
+interface Note {
+  markdown: string
+  metadata: NoteMetadata
+}
 
 interface Search {
   query: string
@@ -44,19 +51,19 @@ interface Search {
 }
 
 interface SearchMetadata {
-  metadata: Partial<PromptMetadata>
+  metadata: Partial<NoteMetadata>
   limit?: number
 }
 
 interface Capabilities {
-  addPrompt: Operation<({ markdown }: { markdown: string }) => Promise<number>>
-  searchPrompts: Operation<(search: Search) => Promise<string>>
-  searchPromptsByMetadata: Operation<(search: SearchMetadata) => Promise<string>>
+  addNote: Operation<(note: Note) => Promise<number>>
+  searchNotes: Operation<(search: Search) => Promise<Note[]>>
+  searchNotesByMetadata: Operation<(search: SearchMetadata) => Promise<Note[]>>
 }
 
-export type PromptAgent = Agent<PromptMetadata> & Capabilities;
+export type NoteAgent = Agent<NoteMetadata> & Capabilities;
 
-export interface PromptAgentConfig {
+export interface NoteAgentConfig {
   openAiApiKey: string
   openAiModel: string
 }
@@ -65,10 +72,10 @@ export interface PromptAgentConfig {
 // CUSTOM ERRORS
 // ─────────────────────────────────────────────────────────────
 
-class PromptValidationError extends Error {
+class NoteValidationError extends Error {
   constructor (message: string) {
     super(message);
-    this.name = 'PromptValidationError';
+    this.name = 'NoteValidationError';
   }
 }
 
@@ -76,7 +83,7 @@ class PromptValidationError extends Error {
 // A LIST OF CAPABILITIES
 // ─────────────────────────────────────────────────────────────
 
-export const capabilities = (store: Store<PromptMetadata>, metadata: AgentMetadata): Capabilities => {
+export const capabilities = (store: Store<NoteMetadata>, metadata: AgentMetadata): Capabilities => {
   // ─── UTILITY FUNCTIONS ────────────────────────────────────
   const capabilitiesMap = metadata.capabilities
     .reduce((acc, capability) => {
@@ -85,39 +92,38 @@ export const capabilities = (store: Store<PromptMetadata>, metadata: AgentMetada
     // eslint-disable-next-line @typescript-eslint/prefer-reduce-type-parameter, @typescript-eslint/consistent-type-assertions
     }, {} as Record<Capability, CapabilitySchema>);
 
-  const validatePromptSchema = (data: any): void => {
-    const { error } = promptMetadataSchema.validate(data);
+  const validateSchema = (data: any): void => {
+    const { error } = noteMetadataSchema.validate(data);
     if (error != null) {
-      // Custom error handling for prompt validation
-      throw new PromptValidationError(`Prompt validation error: ${error.message}`);
+      throw new NoteValidationError(`Note validation error: ${error.message}`);
     }
   };
 
   // ─── ADD CAPABILITY ────────────────────────────────────
 
-  const addPromptCapability = async (obj: { markdown: string, metadata: PromptMetadata }): Promise<number> => {
-    const { markdown, metadata } = obj;
-    validatePromptSchema(metadata);
+  const addNoteCapability = async (note: { markdown: string, metadata: NoteMetadata }): Promise<number> => {
+    const { markdown, metadata } = note;
+    validateSchema(metadata);
     const result = await store.insert({ text: markdown, metadata: { ...metadata } });
     return result;
   };
 
   // ─── SEARCH CAPABILITY ────────────────────────────────────
 
-  const searchPromptCapability = async (search: Search): Promise<string> => {
+  const searchNotesCapability = async (search: Search): Promise<Note[]> => {
     const { query, limit } = search;
     const results = await store.search({ query, limit: limit ?? 10 });
-    return results.length > 0 ? results.map((result) => result.text).join('\n') : 'No results found';
+    return results.map((result) => ({ markdown: result.text, metadata: result.metadata }));
   };
 
   // ─── SEARCH BY METADATA CAPABILITY ────────────────────────────────────
 
-  const createMetadataFilter = (metadata: Partial<PromptMetadata>): Filter<PromptMetadata> => {
-    const filterConditions: Array<SimpleFilter<PromptMetadata>> = [];
+  const createMetadataFilter = (metadata: Partial<NoteMetadata>): Filter<NoteMetadata> => {
+    const filterConditions: Array<SimpleFilter<NoteMetadata>> = [];
     for (const key in metadata) {
       if (Object.prototype.hasOwnProperty.call(metadata, key)) {
         const value = metadata[key];
-        filterConditions.push({ type: 'Match', field: key as keyof PromptMetadata, value });
+        filterConditions.push({ type: 'Match', field: key as keyof NoteMetadata, value });
       }
     }
 
@@ -127,29 +133,27 @@ export const capabilities = (store: Store<PromptMetadata>, metadata: AgentMetada
     };
   };
 
-  const searchPromptsByMetadataCapability = async (search: SearchMetadata): Promise<string> => {
+  const searchNotesByMetadataCapability = async (search: SearchMetadata): Promise<Note[]> => {
     const { metadata, limit } = search;
     const filter = createMetadataFilter(metadata);
     const results = await store.searchByMetadata({ filter, limit: limit ?? 10 });
-    return results.length > 0 ? results.map((result) => result.text).join('\n') : 'No results found';
+    return results.map((result) => ({ markdown: result.text, metadata: result.metadata }));
   };
 
   // ─── SCHEMA ───────────────────────────────────────────────
-  const { addPrompt, searchPrompts, searchPromptsByMetadata } = capabilitiesMap;
+  const { addNote, searchNotes, searchNotesByMetadata } = capabilitiesMap;
 
   return {
-    addPrompt: { fn: addPromptCapability, metadata: addPrompt },
-    searchPrompts: { fn: searchPromptCapability, metadata: searchPrompts },
-    searchPromptsByMetadata: { fn: searchPromptsByMetadataCapability, metadata: searchPromptsByMetadata }
+    addNote: { fn: addNoteCapability, metadata: addNote },
+    searchNotes: { fn: searchNotesCapability, metadata: searchNotes },
+    searchNotesByMetadata: { fn: searchNotesByMetadataCapability, metadata: searchNotesByMetadata }
   };
 };
 
-// Load metadata for the PromptAgent from a JSON file
-export function createPromptAgent (store: Store<PromptMetadata>, config: PromptAgentConfig): PromptAgent {
-  // Load PromptAgent metadata from JSON file
+export function createNoteAgent (store: Store<NoteMetadata>, config: NoteAgentConfig): NoteAgent {
   const metadataPath = path.join(__dirname, './', 'metadata.json');
-  const promptAgentMetadata: AgentMetadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
-  const toolSet = capabilities(store, promptAgentMetadata);
+  const metadata: AgentMetadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
+  const toolSet = capabilities(store, metadata);
   const { openAiApiKey: apiKey, openAiModel: model } = config;
 
   const openAIAgent = new OpenAIAgent({
@@ -165,13 +169,11 @@ export function createPromptAgent (store: Store<PromptMetadata>, config: PromptA
     llm: new OpenAI({ model, apiKey })
   });
 
-  // Define the processQuery function specific to the PromptAgent
   const processQueryFn = async (query: string): Promise<string> => {
     return (await openAIAgent.chat({ message: query })).response;
   };
 
-  // Use createStoreAwareAgent to create and return the PromptAgent
-  const agent = createAgent<PromptMetadata>(promptAgentMetadata, store, processQueryFn);
+  const agent = createAgent<NoteMetadata>(metadata, store, processQueryFn);
   return {
     ...agent,
     ...toolSet

@@ -1,0 +1,113 @@
+{
+  "id": "note-agent",
+  "name": "Note Agent",
+  "description": "Facilitates the creation, retrieval, and management of notes, enhancing interactions with GPT sessions by providing structured note-taking capabilities.",
+  "version": "1.0",
+  "capabilities": [
+    {
+      "name": "addNote",
+      "description": "Adds a new note with given markdown content and metadata. The markdown is the main content of the note, while the metadata includes attributes like version, name, tags, and a description for the note.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "markdown": {
+            "type": "string",
+            "description": "The markdown content of the note."
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Metadata for the note, including version, name, tags, and description.",
+            "properties": {
+              "version": {
+                "type": "string",
+                "pattern": "^\\d+\\.\\d+\\.\\d+$",
+                "description": "The version of the note."
+              },
+              "name": {
+                "type": "string",
+                "description": "The name of the note."
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Tags associated with the note for categorization."
+              },
+              "description": {
+                "type": "string",
+                "description": "A brief description of the note."
+              },
+              "title": {
+                "type": "string",
+                "description": "The title of the note."
+              }
+            },
+            "required": ["version", "name", "tags", "description", "title"]
+          }
+        },
+        "required": ["markdown", "metadata"]
+      }
+    },
+    {
+      "name": "searchNotes",
+      "description": "Searches for notes based on a simple query string, returning a list of notes that match the query.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "The query string used to search for notes."
+          },
+          "limit": {
+            "type": "number",
+            "description": "Optional. Limits the number of returned search results."
+          }
+        },
+        "required": ["query"]
+      }
+    },
+    {
+      "name": "searchNotesByMetadata",
+      "description": "Enables searching for notes by specific metadata fields for more refined results. Supports searching by version, name, tags, and description.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "metadata": {
+            "type": "object",
+            "description": "Specifies the metadata fields to search by.",
+            "properties": {
+              "version": {
+                "type": "string",
+                "description": "Search by the note's version."
+              },
+              "name": {
+                "type": "string",
+                "description": "Search by the note's name."
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Search by tags associated with the note."
+              },
+              "description": {
+                "type": "string",
+                "description": "Search by text snippet in the note's description."
+              }
+            },
+            "required": [],
+            "minProperties": 1,
+            "additionalProperties": false
+          },
+          "limit": {
+            "type": "number",
+            "description": "Optional. Limits the number of returned search results."
+          }
+        },
+        "required": ["metadata"]
+      }
+    }
+  ]
+}
