@@ -8,9 +8,11 @@
     "build": "tsc"
   },
   "dependencies": {
+    "@asteasolutions/zod-to-openapi": "^6.4.0",
     "@giving-tree/agent": "workspace:*",
     "@giving-tree/core": "workspace:*",
     "@giving-tree/store": "workspace:*",
+    "@giving-tree/tool-provider": "workspace:*",
     "@qdrant/js-client-rest": "^1.8.1",
     "dotenv": "^16.4.3"
   }

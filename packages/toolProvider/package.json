@@ -1,18 +1,18 @@
 {
-  "name": "@giving-tree/agent",
+  "name": "@giving-tree/tool-provider",
   "version": "1.0.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
     "lint": "eslint './src/**/*.{ts,tsx}'",
-    "build": "tsc && (cd src && rsync -R $(find . -name 'metadata.json') ../dist/)"
+    "build": "tsc"
   },
   "dependencies": {
     "@giving-tree/core": "workspace:*",
-    "@giving-tree/tool-provider": "workspace:*",
     "llamaindex": "^0.2.0",
-    "rsync": "^0.6.1",
-    "zod": "^3.22.4"
+    "reflect-metadata": "^0.2.2",
+    "zod": "^3.22.4",
+    "zod-to-openapi": "^0.2.1"
   },
   "devDependencies": {
     "shx": "^0.3.4"
